@@ -213,3 +213,46 @@ Matrix.prototype.gaussianElimination = function(a, useQuotientObject) {
 		}
 	}
 }
+
+/* TranslationMatrix
+ * 
+ * A 4x4 translation matrix representation 
+ * using a Float32Array.
+ *
+ * @param params.shiftX
+ * @param params.shiftY
+ * @param params.shiftZ
+ * @param params.rotationX
+ * @param params.rotationY
+ * @param params.rotationZ
+ */
+Matrix.prototype.createTranslationMatrix = function(params) {
+
+    this.shiftX = params.shiftX;
+    this.shiftY = params.shiftY;
+    this.shiftZ = params.shiftZ;
+
+    this.rotationX = params.rotationX;
+    this.rotationY = params.rotationY;
+    this.rotationZ = params.rotationZ;
+
+    if (!params.shiftX)
+        this.shiftX = 0;
+
+    if (!params.shiftY)
+        this.shiftY = 0;
+
+    if (!params.shiftZ)
+        this.shiftZ = 0;
+
+    if (!params.rotationX)
+        this.rotationX = 0;
+
+    if (!params.rotationY)
+        this.rotationY = 0;
+
+    if (!params.rotationZ)
+        this.rotationZ = 0;
+
+    this.matrixArray = new Float32Array([]);
+}
