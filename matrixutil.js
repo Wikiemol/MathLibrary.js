@@ -20,10 +20,7 @@ MatrixUtil.matrixSize = 3;
 
 /* Adds two matrices */
 MatrixUtil.plus = function(matrix1, matrix2) {
-    MatrixUtil.warnIfWrongSize(matrix1.length);
-    MatrixUtil.warnIfWrongSize(matrix2.length);
-
-    var result = MatrixUtil.createMatrix(matrix1.length);
+    var result = MatrixUtil.createEmptyMatrix(matrix1.length);
 
     for (var i = 0; i < matrix1.length; i++) {
         result[i] = matrix1[i] + matrix2[i];
@@ -34,10 +31,7 @@ MatrixUtil.plus = function(matrix1, matrix2) {
 
 /* Subtracts two matrices */
 MatrixUtil.minus = function(matrix1, matrix2) {
-    MatrixUtil.warnIfWrongSize(matrix1.length);
-    MatrixUtil.warnIfWrongSize(matrix2.length);
-
-    var result = MatrixUtil.createMatrix(matrix1.length);
+    var result = MatrixUtil.createEmptyMatrix(matrix1.length);
 
     for (var i = 0; i < matrix1.length; i++) {
         result[i] = matrix1[i] - matrix2[i];
@@ -48,9 +42,7 @@ MatrixUtil.minus = function(matrix1, matrix2) {
 
 /* Scalar product */
 MatrixUtil.sProduct = function(matrix, scalar) {
-    MatrixUtil.warnIfWrongSize(matrix.length);
-
-    var result = MatrixUtil.createMatrix(matrix.length);
+    var result = MatrixUtil.createEmptyMatrix(matrix.length);
 
     for (var i = 0; i < matrix.length; i++) {
         result[i] = matrix[i] * scalar;
@@ -58,12 +50,24 @@ MatrixUtil.sProduct = function(matrix, scalar) {
     return result;
 }
 
+/* Matrix vector product */
+MatrixUtil.vProduct = function(matrix, vector) {
+    MatrixUtil.warnIfWrongSize(matrix.length);
+    MatrixUtil.warnIfWrongSize(vector.length * vector.length);
+
+    var result = MatrixUtil.createEmptyMatrix(vector.length);
+
+    for (var i = 0; i < result.length; i++) {
+        result[i] = Vector.dot(MatrixUtil.getRowAsArray(matrix, i + 1), vector);
+    }
+    return result;
+}
 /* Matrix Product */
 MatrixUtil.mProduct = function(matrix1, matrix2) {
     MatrixUtil.warnIfWrongSize(matrix1.length);
     MatrixUtil.warnIfWrongSize(matrix2.length);
 
-    var result = MatrixUtil.createMatrix(matrix1.length);
+    var result = MatrixUtil.createEmptyMatrix(matrix1.length);
 
     for (var i = 0; i < MatrixUtil.matrixSize; i++) {
         for (var j = 0; j < MatrixUtil.matrixSize; j++) {
@@ -104,7 +108,7 @@ MatrixUtil.convertMatrixIndexToArrayIndex = function(a, b) {
 /* Creates an empty array of the right type and
  * length based on MatrixUtil.type.
  */
-MatrixUtil.createMatrix = function(length) {
+MatrixUtil.createEmptyMatrix = function(length) {
     var result;
     switch(MatrixUtil.type) {
         case MatrixUtil.FLOAT_32_ARRAY:
@@ -114,7 +118,7 @@ MatrixUtil.createMatrix = function(length) {
             result = new Array(length);
             break;
         default:
-            result = new Float32Array(length);
+            MatrixUtil.wrongTypeError();
             break;
     }
 
@@ -140,7 +144,7 @@ MatrixUtil.logMatrix = function(matrix) {
 /* Returns the matrix row as an array */
 MatrixUtil.getRowAsArray = function(matrix, rowIndex) {
     MatrixUtil.warnIfWrongSize(matrix.length);
-    var row = MatrixUtil.createMatrix(MatrixUtil.matrixSize);
+    var row = MatrixUtil.createEmptyMatrix(MatrixUtil.matrixSize);
 
     for (var i = 0; i < MatrixUtil.matrixSize; i++)
         row[i] = MatrixUtil.getElementAtIndex(matrix, rowIndex, i + 1);
@@ -150,7 +154,7 @@ MatrixUtil.getRowAsArray = function(matrix, rowIndex) {
 /* Returns the matrix column as an array */
 MatrixUtil.getColumnAsArray = function(matrix, columnIndex) {
     MatrixUtil.warnIfWrongSize(matrix.length);
-    var column = MatrixUtil.createMatrix(MatrixUtil.matrixSize);
+    var column = MatrixUtil.createEmptyMatrix(MatrixUtil.matrixSize);
 
     for (var i = 0; i < MatrixUtil.matrixSize; i++)
         column[i] = MatrixUtil.getElementAtIndex(matrix, i + 1, columnIndex);
@@ -170,4 +174,126 @@ MatrixUtil.warnIfWrongSize = function(length) {
     }
 
     return false;
+}
+
+/* Returns a 4x4 transformation matrix with the given attributes
+ * 
+ * @params.rotationX
+ * @params.rotationY
+ * @params.rotationZ
+ * @params.shiftX
+ * @params.shiftY
+ * @params.shiftZ
+ */
+MatrixUtil.createTransformationMatrix = function(params) {
+    if(!params)
+        params = {};
+
+    if (params.rotationX != 0 && !params.rotationX)
+        params.rotationX = 0;
+
+    if (params.rotationY != 0 && !params.rotationY)
+        params.rotationY = 0;
+
+    if (params.rotationZ != 0 && !params.rotationZ)
+        params.rotationZ = 0;
+
+    if (params.shiftX != 0 && !params.shiftX)
+        params.shiftX = 0;
+
+    if (params.shiftY != 0 && !params.shiftY)
+        params.shiftY = 0;
+
+    if (params.shiftZ != 0 && !params.shiftZ)
+        params.shiftZ = 0;
+
+    var rotationX = MatrixUtil.createRotationXMatrix(params.rotationX);
+    var rotationY = MatrixUtil.createRotationYMatrix(params.rotationY);
+    var rotationZ = MatrixUtil.createRotationZMatrix(params.rotationZ);
+
+    var translation = MatrixUtil.createTranslationMatrix(params.shiftX, params.shiftY, params.shiftZ)
+
+    /* Shorthand for matrix multiply */
+    var m = MatrixUtil.mProduct;
+
+    var result = m(m(m(rotationX, rotationY), rotationZ), translation);
+    return result;
+}
+
+/* Returns a 4x4 matrix that will rotate a vector 
+ * theta radians about the X axis.
+ */
+MatrixUtil.createRotationXMatrix = function(theta) {
+    var cos = Math.cos(theta);
+    var sin = Math.sin(theta);
+    var result = MatrixUtil.createMatrix([1, 0,    0,   0,
+                                          0, cos, -sin, 0,
+                                          0, sin,  cos, 0,
+                                          0, 0,    0,   1]);
+    return result;
+}
+
+/* Returns a 4x4 matrix that will rotate a vector 
+ * theta radians about the Y axis.
+ */
+MatrixUtil.createRotationYMatrix = function(theta) {
+    var cos = Math.cos(theta);
+    var sin = Math.sin(theta);
+    var result = MatrixUtil.createMatrix([ cos, 0, sin, 0,
+                                           0,   1, 0,   0,
+                                          -sin, 0, cos, 0,
+                                           0,   0, 0,   1]);
+    return result;
+}
+
+/* Returns a 4x4 matrix that will rotate a vector 
+ * theta radians about the Z axis.
+ */
+MatrixUtil.createRotationZMatrix = function(theta) {
+    var cos = Math.cos(theta);
+    var sin = Math.sin(theta);
+    var result = MatrixUtil.createMatrix([cos, -sin, 0, 0,
+                                          sin,  cos, 0, 0,
+                                          0,    0,   1, 0,
+                                          0,    0,   0, 1]);
+
+    return result;
+}
+
+/* Returns a 4x4 translation matrix that shifts a vector
+ * by shiftX, shiftY, and shiftZ.
+ */
+MatrixUtil.createTranslationMatrix = function(shiftX, shiftY, shiftZ) {
+    var result = MatrixUtil.createMatrix([1, 0, 0, shiftX,
+                                          0, 1, 0, shiftY,
+                                          0, 0, 1, shiftZ,
+                                          0, 0, 0, 1])
+    return result;
+}
+
+/* Creates a matrix of the given values and
+ * the correct type.
+ */
+MatrixUtil.createMatrix = function(array) {
+    var result;
+    switch(MatrixUtil.type) {
+        case MatrixUtil.FLOAT_32_ARRAY:
+            result = new Float32Array(array);
+            break;
+        case MatrixUtil.ARRAY:
+            result = array;
+            break;
+        default:
+            MatrixUtil.wrongTypeError();
+            break;
+    }
+    return result
+}
+
+
+/* Should be thrown when MatrixUtil.type is set
+ * to something that is not known as a type.
+ */
+MatrixUtil.wrongTypeError = function() {
+    throw "WrongTypeError: MatrixUtil.type must be set to either MatrixUtil.FLOAT_32_ARRAY or MatrixUtil.ARRAY";
 }

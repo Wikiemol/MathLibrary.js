@@ -45,3 +45,21 @@ Vector.scalarDifference = function(v1, v2) {
     
     return result;
 }
+
+/* Draws a 2d vector onto an html5 canvas given a canvas context.
+ * If the vectors length is greater than 2, then the indices
+ * greater than 2 will be ignored.
+ */
+Vector.draw2DVector = function(context, vector, color) {
+    var tempStrokeStyle = context.strokeStyle;
+    var tempFillStyle = context.fillStyle;
+    context.strokeStyle = color;
+    context.fillStyle = color;
+    context.beginPath();
+    context.moveTo(0, 0);
+    context.lineTo(vector[0], vector[1]);
+    context.stroke();
+    context.fillRect(vector[0], vector[1], 5, 5);
+    context.strokeStyle = tempStrokeStyle;
+    context.fillStyle = tempFillStyle;
+}
